@@ -141,12 +141,16 @@ class BitcoinRPC(object):
                                                   
     @defer.inlineCallbacks
     def prevhash(self):
-        resp = (yield self._call('getwork', []))
         try:
-            defer.returnValue(json.loads(resp)['result']['data'][8:72])
+            resp = (yield self._call('getblocktemplate', [{}]))
+            defer.returnValue(json.loads(resp)['result']['previousblockhash'])
         except Exception as e:
-            log.exception("Cannot decode prevhash %s" % str(e))
-            raise
+            if (str(e) == "500 Internal Server Error"):
+                resp = (yield self._call('getblocktemplate', []))
+                defer.returnValue(json.loads(resp)['result']['previousblockhash'])
+            else:
+                log.exception("Cannot decode prevhash %s" % str(e))
+                raise
         
     @defer.inlineCallbacks
     def validateaddress(self, address):
